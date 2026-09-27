@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const {analyze}=require('./model.js');
+const doc=(month,income,expense,type='ventas')=>({name:month+type,month,income,expense,type,confirmed:true});
+assert.equal(analyze({docs:[]}).PIS,null);
+assert.equal(analyze({docs:[]}).EC,null);
+const p={docs:[doc('2026-06',100,60),doc('2026-07',100,60)]};
+let a=analyze(p);assert.equal(a.X,60);assert.equal(a.F,60);assert.equal(a.S,100);assert.equal(a.C,100);assert.equal(a.PIS,80);
+assert.ok(Math.abs(a.EC-(35+25*2/6+20/4+20))<1e-9);
+assert.equal(analyze({...p,place:'En la calle',payment:'Efectivo'}).PIS,a.PIS);
+assert.equal(analyze({docs:[doc('2026-06',100,'')]}).PIS,null);
+assert.equal(analyze({docs:p.docs.map(d=>({...d,confirmed:false}))}).PIS,null);
+let merged=analyze({docs:[...p.docs,doc('2026-06',100,60,'banco')]});assert.equal(merged.income,100);assert.ok(merged.issues.length);
+assert.equal(analyze({docs:[doc('2026-06',100,0),doc('2026-07',100,0)]}).C,100);
+assert.equal(analyze({docs:[doc('2026-06',100,120),doc('2026-07',100,120)]}).C,0);
+console.log('8 verificaciones del motor correctas: fórmulas, ausencia de evidencia, neutralidad, conciliación y límites.');
